@@ -8,8 +8,7 @@ import logging
 from watchdog.observers import Observer
 from watchdog.events import FileSystemEventHandler
 
-# ! FILL IN BELOW
-# ? folder to track e.g. Windows: "C:\\Users\\UserName\\Downloads"
+# folder to track e.g. Windows: "C:\\Users\\UserName\\Downloads"
 source_dir = ""
 dest_dir_sfx = ""
 dest_dir_music = ""
@@ -34,18 +33,17 @@ document_extensions = [
 ]
 
 
-def make_unique(dest, name):
+def make_unique(dest: str, name: str) -> str:
     filename, extension = splitext(name)
     counter = 1
-    # * IF FILE EXISTS, ADDS NUMBER TO THE END OF THE FILENAME
+    # IF FILE EXISTS, ADDS NUMBER TO THE END OF THE FILENAME
     while exists(f"{dest}/{name}"):
         name = f"{filename}({str(counter)}){extension}"
         counter += 1
-
     return name
 
 
-def move_file(dest, entry, name):
+def move_file(dest: str, entry: str, name: str) -> None:
     if exists(f"{dest}/{name}"):
         unique_name = make_unique(dest, name)
         oldName = join(dest, name)
