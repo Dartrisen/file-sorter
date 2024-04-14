@@ -1,12 +1,11 @@
+import logging
 from os import scandir, rename
 from os.path import splitext, exists, join
 from shutil import move
 from time import sleep
 
-import logging
-
+from watchdog.events import FileSystemEvent, FileSystemEventHandler
 from watchdog.observers import Observer
-from watchdog.events import FileSystemEventHandler
 
 # folder to track e.g. Windows: "C:\\Users\\UserName\\Downloads"
 source_dir = ""
@@ -34,9 +33,14 @@ document_extensions = [
 
 
 def make_unique(dest: str, name: str) -> str:
+    """ If file exists add number to the end of filename.
+
+    :param dest: path to the file
+    :param name: filename
+    :return: new name
+    """
     filename, extension = splitext(name)
     counter = 1
-    # IF FILE EXISTS, ADDS NUMBER TO THE END OF THE FILENAME
     while exists(f"{dest}/{name}"):
         name = f"{filename}({str(counter)}){extension}"
         counter += 1
@@ -44,27 +48,34 @@ def make_unique(dest: str, name: str) -> str:
 
 
 def move_file(dest: str, entry: str, name: str) -> None:
+    """ Rename and move file.
+
+    :param dest: path to the file
+    :param entry:
+    :param name:
+    """
     if exists(f"{dest}/{name}"):
         unique_name = make_unique(dest, name)
-        oldName = join(dest, name)
-        newName = join(dest, unique_name)
-        rename(oldName, newName)
+        old_name = join(dest, name)
+        new_name = join(dest, unique_name)
+        rename(old_name, new_name)
     move(entry, dest)
 
 
 class MoverHandler(FileSystemEventHandler):
     # ? THIS FUNCTION WILL RUN WHENEVER THERE IS A CHANGE IN "source_dir"
     # ? .upper is for not missing out on files with uppercase extensions
-    def on_modified(self, event):
+    def on_modified(self, event: FileSystemEvent) -> None:
         with scandir(source_dir) as entries:
             for entry in entries:
                 name = entry.name
-                self.check_audio_files(entry, name)
-                self.check_video_files(entry, name)
-                self.check_image_files(entry, name)
-                self.check_document_files(entry, name)
+                self.move_audio_files(entry, name)
+                self.move_video_files(entry, name)
+                self.move_image_files(entry, name)
+                self.move_document_files(entry, name)
 
-    def check_audio_files(self, entry, name):  # * Checks all Audio Files
+    @staticmethod
+    def move_audio_files(entry: str, name: str) -> None:
         for audio_extension in audio_extensions:
             if name.endswith(audio_extension) or name.endswith(audio_extension.upper()):
                 if entry.stat().st_size < 10_000_000 or "SFX" in name:  # ? 10Megabytes
@@ -74,19 +85,22 @@ class MoverHandler(FileSystemEventHandler):
                 move_file(dest, entry, name)
                 logging.info(f"Moved audio file: {name}")
 
-    def check_video_files(self, entry, name):  # * Checks all Video Files
+    @staticmethod
+    def move_video_files(entry: str, name: str) -> None:
         for video_extension in video_extensions:
             if name.endswith(video_extension) or name.endswith(video_extension.upper()):
                 move_file(dest_dir_video, entry, name)
                 logging.info(f"Moved video file: {name}")
 
-    def check_image_files(self, entry, name):  # * Checks all Image Files
+    @staticmethod
+    def move_image_files(entry: str, name: str) -> None:
         for image_extension in image_extensions:
             if name.endswith(image_extension) or name.endswith(image_extension.upper()):
                 move_file(dest_dir_image, entry, name)
                 logging.info(f"Moved image file: {name}")
 
-    def check_document_files(self, entry, name):  # * Checks all Document Files
+    @staticmethod
+    def move_document_files(entry: str, name: str) -> None:
         for documents_extension in document_extensions:
             if name.endswith(documents_extension) or name.endswith(documents_extension.upper()):
                 move_file(dest_dir_documents, entry, name)
