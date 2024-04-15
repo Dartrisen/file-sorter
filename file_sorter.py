@@ -28,16 +28,16 @@ audio_extensions = [
     ".m4a", ".flac", "mp3", ".wav", ".wma", ".aac"
 ]
 document_extensions = [
-    ".doc", ".docx", ".odt", ".pdf", ".xls", ".xlsx", ".ppt", ".pptx"
+    ".doc", ".docx", ".odt", ".pdf", ".xls", ".xlsx", ".ppt", ".pptx", ".txt"
 ]
 
 
 def make_unique(dest: str, name: str) -> str:
     """ If file exists add number to the end of filename.
 
-    :param dest: path to the file
-    :param name: filename
-    :return: new name
+    :param dest: The destination directory where the file will be moved.
+    :param name: The original name of the file.
+    :return: A unique filename.
     """
     filename, extension = splitext(name)
     counter = 1
@@ -50,9 +50,9 @@ def make_unique(dest: str, name: str) -> str:
 def move_file(dest: str, entry: str, name: str) -> None:
     """ Rename and move file.
 
-    :param dest: path to the file
-    :param entry:
-    :param name:
+    :param dest: The destination directory where the file will be moved.
+    :param entry: The directory path of the file to be moved.
+    :param name: The name of the file to be moved.
     """
     if exists(f"{dest}/{name}"):
         unique_name = make_unique(dest, name)
@@ -63,8 +63,10 @@ def move_file(dest: str, entry: str, name: str) -> None:
 
 
 class MoverHandler(FileSystemEventHandler):
-    # ? THIS FUNCTION WILL RUN WHENEVER THERE IS A CHANGE IN "source_dir"
-    # ? .upper is for not missing out on files with uppercase extensions
+    """This function will run whenever there is a change in "source_dir"
+
+    .upper is for not missing out on files with uppercase extensions
+    """
     def on_modified(self, event: FileSystemEvent) -> None:
         with scandir(source_dir) as entries:
             for entry in entries:
@@ -78,7 +80,7 @@ class MoverHandler(FileSystemEventHandler):
     def move_audio_files(entry: str, name: str) -> None:
         for audio_extension in audio_extensions:
             if name.endswith(audio_extension) or name.endswith(audio_extension.upper()):
-                if entry.stat().st_size < 10_000_000 or "SFX" in name:  # ? 10Megabytes
+                if entry.stat().st_size < 10_000_000 or "SFX" in name:  # 10Megabytes
                     dest = dest_dir_sfx
                 else:
                     dest = dest_dir_music
@@ -108,9 +110,11 @@ class MoverHandler(FileSystemEventHandler):
 
 
 if __name__ == "__main__":
-    logging.basicConfig(level=logging.INFO,
-                        format='%(asctime)s - %(message)s',
-                        datefmt='%Y-%m-%d %H:%M:%S')
+    logging.basicConfig(
+        level=logging.INFO,
+        format='%(asctime)s - %(message)s',
+        datefmt='%Y-%m-%d %H:%M:%S'
+    )
     path = source_dir
     event_handler = MoverHandler()
     observer = Observer()
